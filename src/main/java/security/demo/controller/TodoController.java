@@ -11,6 +11,7 @@ import security.demo.dto.TodoDTO;
 import security.demo.entity.TodoEntity;
 import security.demo.service.TodoService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,18 +23,64 @@ public class TodoController {
     private TodoService service;
 
     /*
+    * ResponseEntity 란?
+    * - 해당 객체를 이용해 상태코드, 응답 본문 등을 설정해서 클라이언트 응답
+    * - HTTP 응답의 상태코드와 헤더를 포함해 더 세부적으로 제어
+    *   
+    * ResponseEntity 메서두
+    * - ok(): 성공
+    * - body():응답 본문  설정
+    *
+    * @AuthenticationPrincipal
+    *  - 현재 인증된 사용자 정봅에 접근할 수 있게한다.
+    *  - spring security는 sercurity context에서 현재 인증된 사용자의 principal을 가져옴
+    *  - principal: 주체 또는 주인을 의미 스프링 시큐리티에에서 현재 애플리케이션 접근하는 주체를 나타내는 객체
+    *  - 우리코드에서   jwtAuthenticationFilter 클래스에서 userId 바탕으로 이중 객쳏함
     * */
     public ResponseEntity<?> create(@AuthenticationPrincipal String userId, @RequestBody TodoDTO dto) {
         try {
+            // TODO: 임시 유저로 하드코딩한 부분으로 추후 로그인된 유저로 변경 필요
+            // 아직 유저를 구현하지 않아 임시아이디 생성
+            String temporaryUserId = "temporary-user";
+
+            // 1. DTO를 Entity로 변환하는 과정
             TodoEntity entity = TodoDTO.toEntity(dto);
+
+            // 2. 생성하는 당시에는 id(PK)는 null 초기화 -> 데이터베이스 들어가기 전이라 가능
+            // 새로 생성하는 레코드(행)이기 떄문이다.
             entity.setId(null);
+
+            // 3. 유저 아이디 설정("누가" 생성한 투두인지를 설정)
+            // TODO: 임시 유저로 하드코딩한 부분으로 추후 로그인된 유저로 변경 필요
+            // entity.setUserId(temporaryUserId);
+            // 기존 temporaryUserId 대신 매개변수로 넘어온 userId로 설정
             entity.setUserId(userId);
+
+            // 4. 서비스 계층을 이용해 todo 엔티티 생성
             List<TodoEntity> entities = service.create(entity);
+
+            // 5 리턴된 엔티티 리스트르르 TodoDTO로 변환
+            // 아래에는 생성자로 초기화해서 작성가능
             List<TodoDTO> dtos = entities.stream().map(TodoDTO::new).collect(Collectors.toList());
+            //List<TodoDTO> dtos = new ArrayList<>();
+            //for(TodoEntity entity1 : entities) {
+            //    TodoDTO dto1 = new TodoDTO(entity1);
+            //    dtos.add(dto1);
+            //}
+
+            // 6 변환된 todoDTO 리스트를 이용해 ResponseDTO 초기화
+            // 응답 객체 생성 -> TodoDTO를 만들고자 제네릭 처리 -> ResponseDTO에 있는 빌더 패턴 사용
+            // -> data() 사용해 디티오에서 만든 필드를 다 사용 -> 객체 사용
+            // 따라서 TodoDTO 타입을 담는 ResponseDTO 객체를 빌드
             ResponseDTO<TodoDTO> response = ResponseDTO.<TodoDTO>builder()
                     .data(dtos).build();
+            
+            // 7 ResponseDTO를 클라이언트에게 응답
+            // ResponseEntity.ok(): http 상태코드로 200으로 설정
+            // body(): 응답의 body를 response 인스턴스(객체)로 설정
             return ResponseEntity.ok().body(dtos);
         } catch (Exception e) {
+            // 8 예외가 발생한 경우, ResponseDTO data 필드 대신, error 필드에 여러 메시지를 넣어서 리턴
             String error = e.getMessage();
             ResponseDTO<TodoDTO> response = ResponseDTO.<TodoDTO>builder()
                     .error(error).build();

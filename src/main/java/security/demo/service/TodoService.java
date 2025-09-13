@@ -33,17 +33,17 @@ public class TodoService {
 
     // update
     public List<TodoEntity> update(long id, String userId,  TodoEntity entity) {
-        TodoEntity updatEntity = repository.findById(id)
+        TodoEntity updateEntity = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Todo Not Found"));
 
-        if(!updatEntity.getUserId().equals(userId)) {
+        if(!updateEntity.getUserId().equals(userId)) {
             throw new RuntimeException("Unauthorized access");
         }
 
-        updatEntity.setTitle(entity.getTitle());
-        updatEntity.setDone(entity.isDone());
+        updateEntity.setTitle(entity.getTitle());
+        updateEntity.setDone(entity.isDone());
 
-        repository.save(updatEntity);
+        repository.save(updateEntity);
 
         return repository.findByUserId(userId);
 
