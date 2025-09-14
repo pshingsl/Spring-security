@@ -8,6 +8,7 @@ import security.demo.entity.TodoEntity;
 import security.demo.repository.TodoRepository;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -26,52 +27,73 @@ public class TodoService {
         return repository.findByUserId(entity.getUserId());
     }
 
-    // read
-    public  List<TodoEntity> retrieve(String userId) {
+
+    /*
+    * read
+    * 데이터베이스(엔티티)를 해당 유저 아이디로
+    * 유저가 작성한 투두 전체를 조회
+    */
+    public List<TodoEntity> retrieve(String userId) {
         return repository.findByUserId(userId);
     }
 
-    // update
-    public List<TodoEntity> update(long id, String userId,  TodoEntity entity) {
-        TodoEntity updateEntity = repository.findById(id)
+    /*
+    * update
+    *  1. 기존 Todo 엔티티를 찾는다.
+    *  2.비즈니스 로직에서 요청을 보낸 사용자와 Todo의 사용자가 동일한지 확인한다.
+    *  3.엔티티 필드들을 DTO의 값으로 업데이트
+    *  4.변경된 엔티티를 데이터베이스에 저장
+    *  5. 업데이트된 엔티티 하나를 DTO를 변환하여 반환
+    *
+    *  조회 -> 검증 -> 수정 -> 저장 -> 반환
+    * */
+    public TodoDTO update(long id, String userId, TodoDTO dto) {
+        TodoEntity update = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Todo Not Found"));
 
-        if(!updateEntity.getUserId().equals(userId)) {
+        if (!update.getUserId().equals(userId)) {
             throw new RuntimeException("Unauthorized access");
         }
 
-        updateEntity.setTitle(entity.getTitle());
-        updateEntity.setDone(entity.isDone());
+        update.setTitle(dto.getTitle());
+        update.setDone(dto.isDone());
 
-        repository.save(updateEntity);
+        repository.save(update);
 
-        return repository.findByUserId(userId);
+       TodoEntity updateEntity = repository.save(update);
 
-//        repository.save(entity);
-//
-//        return repository.findByUserId(userId);
+       return new TodoDTO(updateEntity);
     }
 
-    // delete
+    /*
+    * 1. 엔티티에서 아이디 기준으로 데이터베이스에서 찾는다.
+    * 2. 요청 아이디와 todoId가 같은지 검증
+    * 3. 검증이 성공하면  repository.delete()를 호출하여 해당 엔티티 삭제
+    *
+    * 조회 -> 검증 -> 삭제
+    * */
     public void delete(long id, String userId) {
         TodoEntity delete = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Todo Not Found"));
 
-        if(!delete.getUserId().equals(userId)) {
+        validate(delete);
+
+        if (!delete.getUserId().equals(userId)) {
             throw new RuntimeException("Unauthorized access");
         }
 
-        repository.deleteById(id);
+        repository.delete(delete);
+
     }
 
 
     private void validate(TodoEntity entity) {
-        if(entity == null){
+        if (entity == null) {
             log.warn("Entity는 null을 사용할 수 없다.");
             throw new RuntimeException("Entity는 null을 사용할 수 없다.");
         }
 
-        if(entity.getUserId() == null){
+        if (entity.getUserId() == null) {
             log.warn("Unknown user");
             throw new RuntimeException("Unknown user");
         }

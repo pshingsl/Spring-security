@@ -3,6 +3,7 @@ package security.demo.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import security.demo.entity.TodoEntity;
 
@@ -11,6 +12,7 @@ import javax.swing.text.html.parser.Entity;
 @Builder
 @Slf4j
 @AllArgsConstructor
+@NoArgsConstructor
 @Data
 public class TodoDTO {
     private Long id;
