@@ -37,6 +37,8 @@ dependencies {
 
 	implementation 'io.jsonwebtoken:jjwt:0.9.1' // 자바 JWT 라이브러리
 	implementation 'javax.xml.bind:jaxb-api:2.3.1' // XML 문서와 JAVA 객체간 매핑 자동화
+
+	implementation 'io.github.cdimascio:java-dotenv:5.2.2'// .env를 읽을 수 있도록 라이브러리
 }
 
 tasks.named('test') {
